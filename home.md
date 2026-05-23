@@ -226,5 +226,6 @@ Place these at the top of any `.md` file:
 Custom emoji images placed in `addons/axeldocs/dock/components/text/custom_emoji/` are referenced with `:name:` syntax.
 Examples: 
 - `:moondrop:` - :moondrop:
+- `:stardrop:` - :stardrop:
 - `:note:` - :note:
 - `:tip:` - :tip:

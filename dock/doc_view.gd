@@ -233,8 +233,7 @@ func _populate_content(md_path: String) -> void:
 	var lines := file.get_as_text().split("\n")
 	file.close()
 
-	# ---- LIST STATE (for numbering + nesting) ----
-	set_meta("list_stack", [])
+	# ---- LIST STATE (indent nesting) ----
 	set_meta("indent_stack", [0])
 
 	var i := 0
@@ -369,17 +368,10 @@ func _populate_content(md_path: String) -> void:
 					indent_stack.pop_back()
 			comp.level = indent_stack.size() - 1
 
-			var stack: Array = get_meta("list_stack")
-
 			# NUMBERED LIST
 			if marker.ends_with("."):
 				comp.type = DocBullet.TYPE.NUMBER
-
-				while stack.size() <= comp.level:
-					stack.append(0)
-
-				stack[comp.level] += 1
-				comp.bullet_number = stack[comp.level]
+				comp.bullet_number = marker.rstrip(".").to_int()
 				comp.get_node("Text/Content").label_text = content
 
 			# BULLET OR CHECKBOX

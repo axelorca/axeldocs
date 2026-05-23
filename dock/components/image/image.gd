@@ -40,6 +40,8 @@ func _ready() -> void:
 
 ## Recalculates and applies the image height based on the current content width.
 func refresh():
+	if not doc_view: return
+	
 	var content_width = doc_view.page_content.size.x
 	
 	var image_height = content_width * (ASPECT_RATIO.x/ASPECT_RATIO.y)
@@ -50,6 +52,8 @@ func refresh():
 
 ## Connects [signal page_content.item_rect_changed] to [method refresh] for live resizing.
 func _connect_signals():
+	if not doc_view: return
+	
 	# Refresh on content box change
 	if not doc_view.page_content.item_rect_changed.is_connected(refresh):
 		doc_view.page_content.item_rect_changed.connect(refresh)

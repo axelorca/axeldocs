@@ -267,5 +267,9 @@ static func _apply_rect(rect: Node, label: RichTextLabel, start_i: int, end_i: i
 	var rect_height  := glyph_height + code_block_offset.y * 0.5
 
 	rect.z_index = -1
+	rect.anchor_left   = 0.0
+	rect.anchor_top    = 0.0
+	rect.anchor_right  = 0.0
+	rect.anchor_bottom = 0.0
 	rect.set_deferred("position", Vector2(span_x - code_block_offset.x * 0.5, y_centered - rect_height / 2.0 + glyph_height / 2.0))
 	rect.set_deferred("size", Vector2(w + code_block_offset.x, rect_height))
