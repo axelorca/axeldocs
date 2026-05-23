@@ -2,7 +2,7 @@
 
 [ext_resource type="StyleBox" uid="uid://c0s1d3h31sgdf" path="res://addons/axeldocs/dock/components/quotes/themes/quote_base.tres" id="1_4qe0f"]
 [ext_resource type="Script" uid="uid://ciq7h76tfaixj" path="res://addons/axeldocs/dock/components/quotes/quote.gd" id="2_ew14y"]
-[ext_resource type="FontFile" uid="uid://cu3ese72y2s4v" path="res://fonts/ttf/JetBrainsMono-SemiBold.ttf" id="3_ms2gk"]
+[ext_resource type="FontFile" uid="uid://cu3ese72y2s4v" path="res://addons/axeldocs/fonts/ttf/JetBrainsMono-SemiBold.ttf" id="3_ms2gk"]
 [ext_resource type="Script" uid="uid://duaai76nu38cc" path="res://addons/axeldocs/dock/components/text/text.gd" id="4_fryx2"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_f0b17"]

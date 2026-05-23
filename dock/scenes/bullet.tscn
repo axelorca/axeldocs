@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://climbqs8xbss3"]
 
 [ext_resource type="Script" uid="uid://c4y4inoqfd4va" path="res://addons/axeldocs/dock/components/bullet/bullet.gd" id="1_3mu8b"]
-[ext_resource type="FontFile" uid="uid://cu3ese72y2s4v" path="res://fonts/ttf/JetBrainsMono-SemiBold.ttf" id="2_31aqp"]
+[ext_resource type="FontFile" uid="uid://cu3ese72y2s4v" path="res://addons/axeldocs/fonts/ttf/JetBrainsMono-SemiBold.ttf" id="2_31aqp"]
 [ext_resource type="Script" uid="uid://duaai76nu38cc" path="res://addons/axeldocs/dock/components/text/text.gd" id="3_6iy1g"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_3mu8b"]
