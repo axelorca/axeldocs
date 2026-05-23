@@ -1,7 +1,9 @@
 @title(Welcome to Axeldocs!)
-@icon(gdicon://file)
+@icon(res://addons/axeldocs/axeldocs.png)
 
 # [tornado radius=5, freq=4]Welcome  to  AxelDocs[/tornado]
+
+# :axeldocs: :axeldocs: :axeldocs: :axeldocs: :axeldocs:
 
 [color=red]No documentation folder has been configured in the project settings, or the configured folder contains no Markdown files.
 Please follow the guide below to get started.[/color]
@@ -142,7 +144,7 @@ Engine classes are auto-detected and linked via ClassDB. Hold **Ctrl** and hover
 
 User-defined classes (any `class_name` in the project) are also detected and coloured:
 
-`Pipe`
+`TestClass`
 
 If a class has a dedicated docs page (marked with `@class`), Ctrl+clicking navigates there instead.
 

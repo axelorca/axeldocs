@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b345q38wqvxm5"
-path="res://.godot/imported/axeldocs.svg-82a74e5003a0ace15984c24bb421f312.ctex"
+uid="uid://clcadfeqf41vy"
+path="res://.godot/imported/axeldocs.png-a4765366e353716e535e26bb046476df.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/axeldocs/axeldocs.svg"
-dest_files=["res://.godot/imported/axeldocs.svg-82a74e5003a0ace15984c24bb421f312.ctex"]
+source_file="res://addons/axeldocs/axeldocs.png"
+dest_files=["res://.godot/imported/axeldocs.png-a4765366e353716e535e26bb046476df.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

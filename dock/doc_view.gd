@@ -47,6 +47,7 @@ func _populate_tree() -> void:
 	var root := page_tree.create_item()
 	page_tree.hide_root = true
 	var folder := ProjectSettings.get_setting("axeldocs/docs_folder", "res://docs") as String
+	GDScriptFormatter.class_registry = _build_class_registry()
 	if folder.is_empty() or not DirAccess.dir_exists_absolute(folder):
 		_load_fallback(root)
 		return
@@ -54,7 +55,6 @@ func _populate_tree() -> void:
 	if not root.get_first_child():
 		_load_fallback(root)
 		return
-	GDScriptFormatter.class_registry = _build_class_registry()
 	_autoselect_item(root)
 
 
@@ -200,6 +200,12 @@ func _get_page_meta(md_path: String) -> Dictionary:
 							if name.to_lower() == lower:
 								result["icon"] = theme.get_icon(name, "EditorIcons")
 								break
+				elif ResourceLoader.exists(value):
+					var tex := load(value) as Texture2D
+					if tex:
+						var img := tex.get_image()
+						img.resize(20, 20, Image.INTERPOLATE_LANCZOS)
+						result["icon"] = ImageTexture.create_from_image(img)
 			else:
 				result[key] = value
 		elif not line.is_empty():
