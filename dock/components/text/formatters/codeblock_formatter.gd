@@ -18,7 +18,7 @@ static var _tag_regex := RegEx.new()
 
 ## Compiles [member _code_regex] and [member _tag_regex] once at class load time.
 static func _static_init() -> void:
-	_code_regex.compile(r"\[code(?:=[^\]]+)?\](.*?)\[/code\]")
+	_code_regex.compile(r"\[code(?:=[^\]]+)?\]([\s\S]*?)\[/code\]")
 	_tag_regex.compile(r"\[[^\]]*\]")
 
 
@@ -64,7 +64,10 @@ static func inline(label: RichTextLabel):
 	var rects_needed: Array[Dictionary] = []  # {start_i, end_i, line}
 
 	for match in matches:
-		var code := _tag_regex.sub(match.get_string(1), "", true)
+		var raw_inner := match.get_string(1)
+		raw_inner = raw_inner.replace("[lb]", char(1))
+		var code := _tag_regex.sub(raw_inner, "", true)
+		code = code.replace(char(1), "[")
 		if code.is_empty():
 			continue
 		var raw_before := label.text.substr(0, match.get_start())
@@ -150,6 +153,10 @@ static func _apply_rect(rect: Node, label: RichTextLabel, start_i: int, end_i: i
 	var run_size : int  = normal_size
 
 	while raw_i < raw.length():
+		if raw.substr(raw_i, 4) == "[lb]":
+			parsed_i += 1
+			raw_i += 4
+			continue
 		if raw[raw_i] == "[":
 			var close := raw.find("]", raw_i)
 			if close == -1:

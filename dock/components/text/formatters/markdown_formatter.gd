@@ -213,6 +213,7 @@ static func highlight(source: String) -> String:
 			" [code=EXPURL:%s]%s[/code] " % [lc["url"], lc["content"]]
 		)
 
+	result = result.replace(char(1), "[lb]")
 	return result
 
 
