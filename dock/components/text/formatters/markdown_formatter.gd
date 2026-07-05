@@ -65,6 +65,24 @@ static func highlight(source: String) -> String:
 	link_out += result.substr(link_last)
 	result = link_out
 
+	# Convert inline backtick code spans BEFORE bold/italic processing so that
+	# underscores inside backticks are never treated as italic markers.
+	result = _re_replace(result, r"`([^`]*)`", " [code]$1[/code] ")
+	result = _re_replace(result, r"(?m)^ \[code\]", "[code]")
+	result = _re_replace(result, r"(?m)\[/code\] $", "[/code]")
+
+	# Protect those new [code] spans so the bold/italic and emoji passes skip them.
+	var protected2 := ""
+	var last2 := 0
+	for m in code_re.search_all(result):
+		protected2 += result.substr(last2, m.get_start() - last2)
+		var token := "%%CB%d%%" % code_blocks.size()
+		code_blocks.append(m.get_string())
+		protected2 += token
+		last2 = m.get_end()
+	protected2 += result.substr(last2)
+	result = protected2
+
 	# Bold-italic
 	result = _re_replace(result, r"\*\*\*(.*?)\*\*\*", "[b][i]$1[/i][/b]")
 	result = _re_replace(result, r"___(.*?)___",        "[b][i]$1[/i][/b]")
@@ -79,25 +97,6 @@ static func highlight(source: String) -> String:
 
 	# Strikethrough
 	result = _re_replace(result, r"~~(.*?)~~", "[s]$1[/s]")
-
-	# Inline code — [^`]* stops at any backtick so adjacent spans split correctly
-	result = _re_replace(result, r"`([^`]*)`", " [code]$1[/code] ")
-	# Remove the added space when the tag falls at a line boundary
-	result = _re_replace(result, r"(?m)^ \[code\]", "[code]")
-	result = _re_replace(result, r"(?m)\[/code\] $", "[/code]")
-
-	# Re-protect inline [code]...[/code] spans created from backticks above
-	# so that emoji substitution cannot fire inside them
-	var protected2 := ""
-	var last2 := 0
-	for m in code_re.search_all(result):
-		protected2 += result.substr(last2, m.get_start() - last2)
-		var token := "%%CB%d%%" % code_blocks.size()
-		code_blocks.append(m.get_string())
-		protected2 += token
-		last2 = m.get_end()
-	protected2 += result.substr(last2)
-	result = protected2
 
 	# Headers FIRST so emojis know the current font size
 	result = _re_replace(result, r"(?m)^#{6}\s+(.*?)$", "[font_size=10][b]$1[/b][/font_size]")
