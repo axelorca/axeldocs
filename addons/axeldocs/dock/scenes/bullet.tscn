@@ -15,7 +15,7 @@ theme_override_constants/separation = 0
 script = ExtResource("1_3mu8b")
 type = 2
 bullet_margin = NodePath("BulletMargin")
-checkbox = NodePath("Bullet/CheckBox")
+checkbox = NodePath("Bullet/CheckboxHolder/CheckBox")
 bullet = NodePath("Bullet/Bullet")
 number = NodePath("Bullet/Number")
 text_content = NodePath("Text/Content")
@@ -58,10 +58,14 @@ fit_content = true
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="CheckBox" type="CheckBox" parent="Bullet" unique_id=804639846]
+[node name="CheckboxHolder" type="Control" parent="Bullet"]
 visible = false
 layout_mode = 2
+size_flags_horizontal = 4
 size_flags_vertical = 0
+
+[node name="CheckBox" type="CheckBox" parent="Bullet/CheckboxHolder" unique_id=804639846]
+layout_mode = 0
 
 [node name="Text" type="PanelContainer" parent="." unique_id=1138788519]
 custom_minimum_size = Vector2(22, 0)

@@ -334,7 +334,7 @@ func _populate_content(md_path: String) -> void:
 						break
 					code_lines.append(lines[i])
 					i += 1
-				# i is now either past the closing fence or at lines.size(), safe either way
+				# i is either past the closing fence or at lines.size(), safe either way
 
 			var comp: DocText = COMP_TEXT.instantiate()
 			page_content.add_child(comp)

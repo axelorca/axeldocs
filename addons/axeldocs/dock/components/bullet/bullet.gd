@@ -77,12 +77,28 @@ func _refresh_deferred():
 	var marker_size := maxi(1, roundi(14 * zoom))
 	bullet.add_theme_font_size_override("normal_font_size", marker_size)
 	number.add_theme_font_size_override("normal_font_size", marker_size)
-	
-	bullet.visible = type == TYPE.BULLET
-	checkbox.visible = type == TYPE.CHECKBOX
-	number.visible = type == TYPE.NUMBER
-	
+
 	number.text = str(bullet_number, ".")
+	var marker_width := 25.0 * zoom
+	if type == TYPE.NUMBER:
+		var number_width := number.get_theme_font("normal_font").get_string_size(
+			number.text, HORIZONTAL_ALIGNMENT_LEFT, -1, marker_size
+		).x
+		marker_width = maxf(marker_width, number_width + 6.0 * zoom)
+
+	var checkbox_holder := checkbox.get_parent() as Control
+	var checkbox_size := checkbox.get_combined_minimum_size()
+	var checkbox_zoom := zoom * 0.5
+	checkbox.size = checkbox_size
+	checkbox.scale = Vector2.ONE * checkbox_zoom
+	checkbox_holder.custom_minimum_size = checkbox_size * checkbox_zoom
+	if type == TYPE.CHECKBOX:
+		marker_width = maxf(marker_width, checkbox_holder.custom_minimum_size.x)
+	(bullet.get_parent() as Control).custom_minimum_size.x = marker_width
+
+	bullet.visible = type == TYPE.BULLET
+	checkbox_holder.visible = type == TYPE.CHECKBOX
+	number.visible = type == TYPE.NUMBER
 	
 	await Engine.get_main_loop().process_frame
 	
@@ -91,4 +107,4 @@ func _refresh_deferred():
 
 ## Sets the pressed state of the checkbox marker to [param state].
 func set_checkbox(state: bool):
-	get_node("Bullet/CheckBox").button_pressed = state
+	checkbox.button_pressed = state
