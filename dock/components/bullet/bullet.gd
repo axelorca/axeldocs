@@ -40,13 +40,43 @@ enum TYPE {
 
 @export var text_content: DocText
 
+## Reference to the parent [DocView], resolved lazily by walking the scene tree.
+var doc_view: DocView:
+	get():
+		if not doc_view:
+			if not is_inside_tree():
+				return null
+			var p = get_parent()
+			while p != null and not p is DocView:
+				p = p.get_parent()
+			doc_view = p
+		return doc_view
+
+## Guards against queuing more than one deferred refresh per frame.
+var _refresh_pending: bool = false
+
 
 ## Updates visibility of marker nodes and applies the nesting margin, then refreshes the text.
+## Deferred so that assigning several properties in a row triggers only one update.
 func refresh():
+	if _refresh_pending:
+		return
+	_refresh_pending = true
+	_refresh_deferred.call_deferred()
+
+
+func _refresh_deferred():
+	_refresh_pending = false
 	if not is_node_ready():
 		await ready
 
-	bullet_margin.custom_minimum_size.x = 20 * level
+	var zoom: float = doc_view.zoom if doc_view else 1.0
+
+	bullet_margin.custom_minimum_size.x = 20 * level * zoom
+
+	var marker_size := maxi(1, roundi(14 * zoom))
+	bullet.add_theme_font_size_override("normal_font_size", marker_size)
+	number.add_theme_font_size_override("normal_font_size", marker_size)
 	
 	bullet.visible = type == TYPE.BULLET
 	checkbox.visible = type == TYPE.CHECKBOX

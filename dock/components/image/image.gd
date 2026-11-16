@@ -47,7 +47,7 @@ func refresh():
 	var image_height = content_width * (ASPECT_RATIO.x/ASPECT_RATIO.y)
 	image_height = clampf(image_height, MIN_HEIGHT, MAX_HEIGHT)
 	
-	custom_minimum_size.y = image_height
+	custom_minimum_size.y = image_height * doc_view.zoom
 
 
 ## Connects [signal page_content.item_rect_changed] to [method refresh] for live resizing.

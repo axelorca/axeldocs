@@ -23,7 +23,7 @@ corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dpibx"]
 
-[node name="DocView" type="Control" unique_id=1470579217 node_paths=PackedStringArray("page_search", "page_tree", "page_content", "page_content_scroll")]
+[node name="DocView" type="Control" unique_id=1470579217 node_paths=PackedStringArray("page_search", "page_tree", "page_content", "page_content_scroll", "zoom_slider")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -35,6 +35,7 @@ page_search = NodePath("VBoxContainer/HSplitContainer/PanelContainer/VBoxContain
 page_tree = NodePath("VBoxContainer/HSplitContainer/PanelContainer/VBoxContainer/Tree")
 page_content = NodePath("VBoxContainer/HSplitContainer/VBoxContainer2/ScrollContainer/MarginContainer/VBoxContainer")
 page_content_scroll = NodePath("VBoxContainer/HSplitContainer/VBoxContainer2/ScrollContainer")
+zoom_slider = NodePath("VBoxContainer/HSplitContainer/PanelContainer/VBoxContainer/Zoom")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1044987193]
 layout_mode = 1
@@ -75,6 +76,14 @@ theme_override_font_sizes/font_size = 14
 theme_override_font_sizes/title_button_font_size = 14
 theme_override_styles/panel = SubResource("StyleBoxFlat_vnwwv")
 hide_root = true
+
+[node name="Zoom" type="HSlider" parent="VBoxContainer/HSplitContainer/PanelContainer/VBoxContainer" unique_id=1470582202]
+layout_mode = 2
+tooltip_text = "Documentation zoom"
+min_value = 0.5
+max_value = 2.0
+step = 0.1
+value = 1.0
 
 [node name="VBoxContainer2" type="PanelContainer" parent="VBoxContainer/HSplitContainer" unique_id=1850291216]
 layout_mode = 2

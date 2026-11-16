@@ -7,17 +7,59 @@ class_name MarkdownFormatter
 ## Number of pixels added to the current font size when sizing inline emoji images.
 const EMOJI_SIZE_OFFSET: int = 4
 
+## Default RichTextLabel base font size used for emoji sizing and header scaling.
+const BASE_FONT_SIZE: int = 14
+
+## Folder containing the custom emoji images.
+const EMOJI_DIR := "res://addons/axeldocs/dock/components/text/custom_emoji"
+
+## Header font sizes for levels h1 through h6 at 100% zoom.
+const HEADER_SIZES: Array[int] = [30, 26, 22, 18, 14, 10]
+
+## Compiled regexes cached by pattern, so each pattern is compiled only once.
+static var _regex_cache: Dictionary = {}
+
+## Emoji name → resource path, built once on first use.
+static var _emoji_paths: Dictionary = {}
+static var _emoji_paths_loaded: bool = false
+
+
+## Returns a compiled (and cached) [RegEx] for [param pattern].
+static func _get_regex(pattern: String) -> RegEx:
+	var re: RegEx = _regex_cache.get(pattern)
+	if re == null:
+		re = RegEx.create_from_string(pattern)
+		_regex_cache[pattern] = re
+	return re
+
+
+## Returns the resource path of the custom emoji named [param emoji_name],
+## or an empty string if it doesn't exist. The directory is scanned only once.
+static func _get_emoji_path(emoji_name: String) -> String:
+	if not _emoji_paths_loaded or _emoji_paths.is_empty():
+		_emoji_paths_loaded = true
+		var dir := DirAccess.open(EMOJI_DIR)
+		if dir:
+			dir.list_dir_begin()
+			var file := dir.get_next()
+			while file != "":
+				if not dir.current_is_dir() and not file.ends_with(".import"):
+					_emoji_paths[file.get_basename()] = EMOJI_DIR.path_join(file)
+				file = dir.get_next()
+			dir.list_dir_end()
+	return _emoji_paths.get(emoji_name, "")
+
 
 ## Converts a Markdown string to BBCode ready for use in a [RichTextLabel].
 ## Protects code spans and link URLs from formatting passes, then restores them
 ## after all substitutions are complete.
-static func highlight(source: String) -> String:
+## [param zoom] scales header and emoji font sizes.
+static func highlight(source: String, zoom: float = 1.0) -> String:
 	var result := source
 
-	# Protect linked inline code: [`code`](url) — must run before everything else
+	# Protect linked inline code: [`code`](url), must run before everything else
 	var linked_codes: Array = []
-	var linked_code_re := RegEx.new()
-	linked_code_re.compile(r"\[`([^`]*)`\]\(([^)]+)\)")
+	var linked_code_re := _get_regex(r"\[`([^`]*)`\]\(([^)]+)\)")
 	var lc_out := ""
 	var lc_last := 0
 	for m in linked_code_re.search_all(result):
@@ -30,8 +72,7 @@ static func highlight(source: String) -> String:
 
 	# Preserve code blocks so emojis don't work inside them
 	var code_blocks := []
-	var code_re := RegEx.new()
-	code_re.compile(r"\[code\].*?\[/code\]")
+	var code_re := _get_regex(r"\[code\].*?\[/code\]")
 
 	var protected := ""
 	var last := 0
@@ -52,8 +93,7 @@ static func highlight(source: String) -> String:
 
 	# Protect link URLs from bold/italic processing
 	var link_urls: Array = []
-	var link_url_re := RegEx.new()
-	link_url_re.compile(r"(!?\[[^\]]*\])\(([^)]+)\)")
+	var link_url_re := _get_regex(r"(!?\[[^\]]*\])\(([^)]+)\)")
 	var link_out := ""
 	var link_last := 0
 	for lm in link_url_re.search_all(result):
@@ -99,16 +139,16 @@ static func highlight(source: String) -> String:
 	result = _re_replace(result, r"~~(.*?)~~", "[s]$1[/s]")
 
 	# Headers FIRST so emojis know the current font size
-	result = _re_replace(result, r"(?m)^#{6}\s+(.*?)$", "[font_size=10][b]$1[/b][/font_size]")
-	result = _re_replace(result, r"(?m)^#{5}\s+(.*?)$", "[font_size=14][b]$1[/b][/font_size]")
-	result = _re_replace(result, r"(?m)^#{4}\s+(.*?)$", "[font_size=18][b]$1[/b][/font_size]")
-	result = _re_replace(result, r"(?m)^#{3}\s+(.*?)$", "[font_size=22][b]$1[/b][/font_size]")
-	result = _re_replace(result, r"(?m)^#{2}\s+(.*?)$", "[font_size=26][b]$1[/b][/font_size]")
-	result = _re_replace(result, r"(?m)^#{1}\s+(.*?)$", "[font_size=30][b]$1[/b][/font_size]")
+	for level in HEADER_SIZES.size():
+		var size := maxi(1, roundi(HEADER_SIZES[level] * zoom))
+		result = _re_replace(
+			result,
+			r"(?m)^#{%d}\s+(.*?)$" % (level + 1),
+			"[font_size=%d][b]$1[/b][/font_size]" % size
+		)
 
 	# Emojis with dynamic font size
-	var emoji_re := RegEx.new()
-	emoji_re.compile(r":([a-zA-Z0-9_\-]+):")
+	var emoji_re := _get_regex(r":([a-zA-Z0-9_\-]+):")
 
 	var out := ""
 	last = 0
@@ -118,45 +158,23 @@ static func highlight(source: String) -> String:
 
 		var before := result.substr(0, m.get_start())
 
-		# Default RichTextLabel font size
-		var font_size := 14 + EMOJI_SIZE_OFFSET
+		# Default RichTextLabel font size (scaled by zoom)
+		var font_size := maxi(1, roundi(BASE_FONT_SIZE * zoom)) + EMOJI_SIZE_OFFSET
 
 		# Find latest active font_size tag
-		var size_re := RegEx.new()
-		size_re.compile(r"\[font_size=(\d+)\]")
+		var size_re := _get_regex(r"\[font_size=(\d+)\]")
 
 		for s in size_re.search_all(before):
 			font_size = int(s.get_string(1)) + EMOJI_SIZE_OFFSET
 
 		var emoji_name := m.get_string(1)
+		var found_path := _get_emoji_path(emoji_name)
 
-		# Find matching file with any extension
-		var dir := DirAccess.open("res://addons/axeldocs/dock/components/text/custom_emoji")
-
-		if dir:
-			dir.list_dir_begin()
-
-			var file := dir.get_next()
-			var found_path := ""
-
-			while file != "":
-				if !dir.current_is_dir():
-					if file.get_basename() == emoji_name:
-						found_path = "res://addons/axeldocs/dock/components/text/custom_emoji/%s" % file
-						break
-
-				file = dir.get_next()
-
-			dir.list_dir_end()
-
-			if found_path != "":
-				out += "[img=%dem]%s[/img]" % [
-					font_size,
-					found_path
-				]
-			else:
-				out += m.get_string()
-
+		if found_path != "":
+			out += "[img=%dem]%s[/img]" % [
+				font_size,
+				found_path
+			]
 		else:
 			out += m.get_string()
 
@@ -222,8 +240,7 @@ static func anchor_slugify(text: String) -> String:
 	var s := text.to_lower()
 
 	# replace everything not alphanumeric with hyphens
-	var re := RegEx.new()
-	re.compile("[^a-z0-9]+")
+	var re := _get_regex("[^a-z0-9]+")
 
 	s = re.sub(s, "-", true)
 
@@ -240,8 +257,7 @@ static func anchor_slugify(text: String) -> String:
 ## Applies [param pattern] to [param text] and replaces each match with [param replacement].
 ## Supports [code]$1[/code] through [code]$N[/code] capture group references.
 static func _re_replace(text: String, pattern: String, replacement: String) -> String:
-	var re := RegEx.new()
-	re.compile(pattern)
+	var re := _get_regex(pattern)
 
 	var out  := ""
 	var last := 0

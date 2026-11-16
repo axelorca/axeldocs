@@ -5,6 +5,15 @@
 class_name DocText
 extends RichTextLabel
 
+## Base font size at 100% zoom; matches the scene's theme overrides.
+const BASE_FONT_SIZE: int = 14
+
+## Theme font size overrides scaled together when zooming.
+const FONT_SIZE_OVERRIDES: Array[StringName] = [
+	&"normal_font_size", &"bold_font_size", &"italics_font_size",
+	&"bold_italics_font_size", &"mono_font_size",
+]
+
 ## Emitted whenever [member label_text] is assigned a new value.
 signal text_changed
 
@@ -102,6 +111,10 @@ func refresh():
 func _update_text():
 	_update_generation += 1
 	var my_gen := _update_generation
+	var zoom: float = doc_view.zoom if doc_view else 1.0
+	var scaled_size := maxi(1, roundi(BASE_FONT_SIZE * zoom))
+	for override_name in FONT_SIZE_OVERRIDES:
+		add_theme_font_size_override(override_name, scaled_size)
 	if is_code_block:
 		text = "[code]" + label_text + "[/code]"
 		text = GDScriptFormatter.highlight(text, _links_active)
@@ -113,7 +126,7 @@ func _update_text():
 			return
 		CodeBlockFormatter.full(self)
 	else:
-		text = MarkdownFormatter.highlight(label_text)
+		text = MarkdownFormatter.highlight(label_text, zoom)
 		text = GDScriptFormatter.highlight(text, _links_active)
 		await Engine.get_main_loop().process_frame
 		if _update_generation != my_gen:

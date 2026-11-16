@@ -71,6 +71,6 @@ func refresh():
 	
 	add_theme_stylebox_override("panel", theme_stylebox)
 	
-	# Final refresh
-	title_text.refresh()
+	# Re-render the body at the current state; the title already re-rendered
+	# when label_text was assigned above.
 	body_text.refresh()

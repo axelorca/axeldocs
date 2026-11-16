@@ -11,15 +11,17 @@ const CODE_BLOCK: PackedScene = preload("res://addons/axeldocs/dock/components/t
 const code_block_offset: Vector2 = Vector2(6, 6)
 
 ## Compiled regex for extracting [code][code]...[/code][/code] spans from BBCode text.
-static var _code_regex := RegEx.new()
+static var _code_regex: RegEx
 ## Compiled regex for stripping BBCode tags when measuring plain-text positions.
-static var _tag_regex := RegEx.new()
+static var _tag_regex: RegEx
 
 
-## Compiles [member _code_regex] and [member _tag_regex] once at class load time.
-static func _static_init() -> void:
-	_code_regex.compile(r"\[code(?:=[^\]]+)?\]([\s\S]*?)\[/code\]")
-	_tag_regex.compile(r"\[[^\]]*\]")
+## Compiles the shared regexes on demand.
+## Lazy init: statics reset to null on script hot-reload.
+static func _ensure_regexes() -> void:
+	if _code_regex == null:
+		_code_regex = RegEx.create_from_string(r"\[code(?:=[^\]]+)?\]([\s\S]*?)\[/code\]")
+		_tag_regex = RegEx.create_from_string(r"\[[^\]]*\]")
 
 
 ## Positions a single full-size background panel over [param label].
@@ -56,7 +58,15 @@ static func full(label: DocText) -> void:
 ## Positions per-line background panels over every inline [code][code][/code] span in [param label].
 ## Reuses, creates, or frees child panels to match the number of spans found.
 static func inline(label: RichTextLabel):
+	_ensure_regexes()
 	var matches := _code_regex.search_all(label.text)
+
+	# Fast path: no code spans, just drop any leftover panels
+	if matches.is_empty():
+		for c in label.get_children():
+			c.queue_free()
+		return
+
 	var parsed_text := label.get_parsed_text()
 
 	# Collect all spans first

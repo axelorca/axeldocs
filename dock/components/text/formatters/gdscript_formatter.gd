@@ -70,13 +70,21 @@ const TYPES := [
 	"PackedColorArray",
 ]
 
+## Compiled regex for extracting [code][code][/code] blocks. group1=attr, group2=content
+static var _block_regex: RegEx
+## Compiled regex for stripping BBCode tags.
+static var _tag_regex: RegEx
+
+
 ## Scans all [code][code][/code] blocks in [param source] and applies GDScript highlighting.
 ## Passes [param with_links] down to [method _parse] to control hyperlink generation.
 static func highlight(source: String, with_links: bool = false) -> String:
-	var block_regex := RegEx.new()
-	block_regex.compile(r"\[code(?:=([^\]]+))?\]([\s\S]*?)\[/code\]")  # group1=attr, group2=content
-	var tag_regex := RegEx.new()
-	tag_regex.compile(r"\[[^\]]*\]")
+	# Lazy init: statics reset to null on script hot-reload, so compile on demand.
+	if _block_regex == null:
+		_block_regex = RegEx.create_from_string(r"\[code(?:=([^\]]+))?\]([\s\S]*?)\[/code\]")
+		_tag_regex = RegEx.create_from_string(r"\[[^\]]*\]")
+	var block_regex := _block_regex
+	var tag_regex := _tag_regex
 	var result := source
 	for match in block_regex.search_all(source):
 		var attr  := match.get_string(1)
@@ -149,7 +157,7 @@ static func _parse(source: String, with_links: bool = false) -> String:
 			prev_was_func  = false
 			continue
 
-		# Number — only when not part of an identifier
+		# Number, only when not part of an identifier
 		if c.is_valid_int():
 			var prev_is_word := i > 0 and (source[i - 1] == "_" or source[i - 1].is_valid_identifier())
 			if not prev_is_word:
@@ -241,7 +249,7 @@ static func _parse(source: String, with_links: bool = false) -> String:
 			prev_was_func  = false
 			continue
 
-		# Colon — type hint, but not "::"
+		# Colon, type hint, but not "::"
 		if c == ":":
 			result += _color(c, COLOR_SYMBOL)
 			i += 1
@@ -269,7 +277,7 @@ static func _parse(source: String, with_links: bool = false) -> String:
 			i += 1
 			continue
 
-		# Space — preserve but skip flag resets so "func foo" works across spaces
+		# Space, preserve but skip flag resets so "func foo" works across spaces
 		if c == " ":
 			result += " "
 			i += 1

@@ -16,6 +16,10 @@ const COMP_DIVIDER = preload("res://addons/axeldocs/dock/scenes/divider.tscn")
 ## Packed scene for list item content blocks.
 const COMP_BULLET = preload("res://addons/axeldocs/dock/scenes/bullet.tscn")
 
+## Base font size of the search field and page tree at 100% zoom;
+## matches the scene's theme overrides.
+const UI_BASE_FONT_SIZE: int = 14
+
 ## Search field for filtering the page tree.
 @export var page_search: TextEdit
 ## Tree widget listing all documentation pages and folders.
@@ -24,9 +28,19 @@ const COMP_BULLET = preload("res://addons/axeldocs/dock/scenes/bullet.tscn")
 @export var page_content: Control
 ## Scroll container wrapping [member page_content].
 @export var page_content_scroll: ScrollContainer
+@export var zoom_slider: HSlider
 
 ## Path of the last opened page; used to restore the selection after a refresh.
 var last_selected_path: String
+
+## Current zoom factor applied to the documentation content.
+var zoom: float = 1.0
+## Guards against applying zoom more than once per frame while the slider drags.
+var _zoom_pending: bool = false
+
+## Cached page metadata keyed by file path, invalidated via modification time.
+## Avoids re-reading every Markdown file (and re-resizing icons) on each refresh.
+var _page_meta_cache: Dictionary = {}
 
 
 ## Public entry point. Clears and rebuilds the page tree.
@@ -43,6 +57,8 @@ func _populate_tree() -> void:
 		page_tree.item_selected.connect(_on_tree_item_selected)
 	if not page_search.text_changed.is_connected(_on_search_changed):
 		page_search.text_changed.connect(_on_search_changed)
+	if not zoom_slider.value_changed.is_connected(_on_zoom_changed):
+		zoom_slider.value_changed.connect(_on_zoom_changed)
 	page_tree.clear()
 	var root := page_tree.create_item()
 	page_tree.hide_root = true
@@ -133,7 +149,6 @@ func _populate_tree_from_dir(path: String, parent: TreeItem) -> void:
 			item.set_metadata(0, full_path)
 			_populate_tree_from_dir(full_path, item)
 
-	randi()
 	# Then remaining files alphabetically
 	for e in entries:
 		var full_path := path.path_join(e)
@@ -160,11 +175,11 @@ func _filter_tree(item: TreeItem, filter: String) -> bool:
 			any_visible = true
 		child = child.get_next()
 
-	# leaf node (a file) — match against its name
+	# leaf node (a file), match against its name
 	if not item.get_first_child():
 		return filter.is_empty() or item.get_text(0).to_lower().contains(filter)
 
-	# folder — visible if any child matched
+	# folder, visible if any child matched
 	return any_visible
 
 
@@ -172,6 +187,12 @@ func _filter_tree(item: TreeItem, filter: String) -> bool:
 ## from the leading lines of [param md_path] before the first non-annotation content.
 ## Returns a dictionary with keys [code]title[/code], [code]icon[/code], and [code]class[/code].
 func _get_page_meta(md_path: String) -> Dictionary:
+	# Serve from cache while the file is unchanged
+	var mtime := FileAccess.get_modified_time(md_path)
+	if _page_meta_cache.has(md_path):
+		var cached: Dictionary = _page_meta_cache[md_path]
+		if cached["mtime"] == mtime:
+			return cached["meta"]
 	# Provide safe defaults
 	var result := {"title": "", "icon": null, "class": ""}
 	var file := FileAccess.open(md_path, FileAccess.READ)
@@ -212,6 +233,7 @@ func _get_page_meta(md_path: String) -> Dictionary:
 			break
 
 	file.close()
+	_page_meta_cache[md_path] = {"mtime": mtime, "meta": result}
 	return result
 
 
@@ -221,6 +243,29 @@ func _on_search_changed() -> void:
 	var root = page_tree.get_root()
 	if root:
 		_filter_tree(root, filter)
+
+
+## Stores the slider value as the new zoom factor.
+## Collapses repeated slider ticks into one re-render per frame.
+func _on_zoom_changed(value: float) -> void:
+	zoom = value
+	if _zoom_pending:
+		return
+	_zoom_pending = true
+	_apply_zoom.call_deferred()
+
+
+## Re-renders every content component on the current page at the current zoom factor,
+## and scales the search field and page tree fonts to match.
+func _apply_zoom() -> void:
+	_zoom_pending = false
+	var ui_size := maxi(1, roundi(UI_BASE_FONT_SIZE * zoom))
+	page_search.add_theme_font_size_override("font_size", ui_size)
+	page_tree.add_theme_font_size_override("font_size", ui_size)
+	page_tree.add_theme_font_size_override("title_button_font_size", ui_size)
+	for child in page_content.get_children():
+		if child.has_method("refresh"):
+			child.refresh()
 
 
 ## Parses [param md_path] line by line and instantiates content components into [member page_content].
@@ -289,7 +334,7 @@ func _populate_content(md_path: String) -> void:
 						break
 					code_lines.append(lines[i])
 					i += 1
-				# i is now either past the closing fence or at lines.size() — safe either way
+				# i is now either past the closing fence or at lines.size(), safe either way
 
 			var comp: DocText = COMP_TEXT.instantiate()
 			page_content.add_child(comp)
